@@ -1,14 +1,18 @@
 package db;
 
 import java.net.UnknownHostException;
+import java.util.List;
+
+import org.json.simple.JSONArray;
+
+import beans.User;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
-
-import db.tables.User;
 
 public class MongoMain {
 	
@@ -24,15 +28,27 @@ public class MongoMain {
 		}
 	}
 	
-	public User getUserByPasscode(String passcode) {
+	public BasicDBObject getUserByPasscode(String passcode) {
 		DBCollection users = database.getCollection("users");
-		users.setObjectClass(User.class);
 		
 		BasicDBObject query = new BasicDBObject();
 		query.put("passcode", passcode);
 		
-		User user = (User) users.findOne(query);
-		return user;
+		return (BasicDBObject) users.findOne(query);
+	}
+	
+	public JSONArray getUserBills(String userID) {
+		DBCollection bills = database.getCollection("bills");
+		BasicDBObject query = new BasicDBObject();
+		query.put("user-id", userID);
+		
+		JSONArray result = new JSONArray();
+		DBCursor cursor = bills.find(query);
+		for (DBObject dbObject : cursor) {
+			result.add(dbObject);
+		}
+		
+		return result;
 	}
 	
 }

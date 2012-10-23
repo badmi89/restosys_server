@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import com.mongodb.BasicDBObject;
+
 import db.MongoMain;
 import db.tables.User;
 
@@ -59,9 +61,9 @@ public class Sender extends Thread {
 						displayHelp();
 					} else if (mess.contains("--gun ")) {
 						String passcode = mess.split(" ")[1];
-						User user = mongo.getUserByPasscode(passcode);
+						BasicDBObject user = mongo.getUserByPasscode(passcode);
 						if(user!=null)
-							System.out.println(user.getFirstname() + " " + user.getLastname());
+							System.out.println(user.get("fname") + " " + user.get("lname"));
 						else 
 							System.out.println("User " + passcode + " don't exist");
 					

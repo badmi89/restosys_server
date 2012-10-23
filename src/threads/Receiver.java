@@ -5,11 +5,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.UUID;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSON;
 
 import db.MongoMain;
 import db.tables.User;
 
 import server.Server;
+import sun.org.mozilla.javascript.json.JsonParser;
 import utils.Key;
 
 public class Receiver extends Thread {
@@ -33,54 +42,40 @@ public class Receiver extends Thread {
 			while (true) {
 				Socket acceptSocket = socket.accept();
 
-				String hostIp = acceptSocket.getRemoteSocketAddress()
-						.toString().split(":")[0].substring(1);
+				String hostIp = acceptSocket.getRemoteSocketAddress().toString().split(":")[0].substring(1);
 
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						acceptSocket.getInputStream()));
+				BufferedReader in = new BufferedReader(new InputStreamReader(acceptSocket.getInputStream()));
 				String received = in.readLine();
-
-				try {
-					String command = received.split(":@:")[0];
-					String value = received.split(":@:")[1];
-
-					if (command.equals(Key.HOST_CHECKIN)) {
-						System.out.println("Host " + hostIp
-								+ " connected, adding to known hosts...");
-						Server.hosts.add(hostIp);
-					} else if (command.equals(Key.HOST_CHECKOUT)) {
-						System.out.println("Host " + hostIp + " is out");
-						Server.hosts.remove(hostIp);
-					} else if (command.equals(Key.REQUEST_LOGIN)) {
-						User user = mongo.getUserByPasscode(value);
-						if (user != null) {
-							String response = Key.SERVER_LOGIN_APPROVE;
-							String name = user.getFirstname() + " "
-									+ user.getLastname();
-							sender.send(response + ":@:" + name, hostIp);
-						} else {
-							sender.send(Key.SERVER_LOGIN_REJECTED
-									+ ":@:User doesn't exist", hostIp);
-						}
+				
+				System.out.println("JSON Received: " + received);
+				
+				JSONObject json = (JSONObject) JSONValue.parse(received);
+				
+				for (Object key : json.keySet()) {
+					if(key.equals(Key.REQUEST_LOGIN)) {
+						handleLoginRequest(json.get(key).toString(), hostIp);
 					}
-
-					else {
-						if (!Server.hosts.contains(hostIp)) {
-							Server.hosts.add(hostIp);
-							System.out.println("Host " + hostIp
-									+ " connected, adding to known hosts...");
-						}
-						System.out.println("Server Received from " + hostIp
-								+ ": " + command);
-					}
-				} catch (IndexOutOfBoundsException e) {
-					System.out.println("Ignoring bad format...");
 				}
+
 			}
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void handleLoginRequest(String value, String hostIp){
+		BasicDBObject user = mongo.getUserByPasscode(value);
+		JSONObject response = new JSONObject();
+		if (user != null) {
+			response.put("ACTION", Key.SERVER_LOGIN_APPROVE);
+			response.put("SESSIONID", UUID.randomUUID().toString());
+			response.put("USER", user);
+			response.put("BILLS", mongo.getUserBills(user.getString("id")));
+		} else {
+			response.put("ACTION", Key.SERVER_LOGIN_REJECTED);
+		}
+		sender.send(response.toJSONString(), hostIp);
 	}
 
 }
