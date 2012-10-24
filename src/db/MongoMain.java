@@ -33,6 +33,7 @@ public class MongoMain {
 		
 		BasicDBObject query = new BasicDBObject();
 		query.put("passcode", passcode);
+		query.put("visible", 1);
 		
 		return (BasicDBObject) users.findOne(query);
 	}
@@ -41,6 +42,7 @@ public class MongoMain {
 		DBCollection bills = database.getCollection("bills");
 		BasicDBObject query = new BasicDBObject();
 		query.put("user-id", userID);
+		query.put("printed", 0);
 		
 		JSONArray result = new JSONArray();
 		DBCursor cursor = bills.find(query);

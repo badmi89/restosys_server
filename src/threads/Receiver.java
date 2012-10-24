@@ -7,18 +7,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.UUID;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.util.JSON;
 
 import db.MongoMain;
-import db.tables.User;
-
-import server.Server;
-import sun.org.mozilla.javascript.json.JsonParser;
 import utils.Key;
 
 public class Receiver extends Thread {
