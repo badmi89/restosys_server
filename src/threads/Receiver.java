@@ -44,10 +44,11 @@ public class Receiver extends Thread {
 				System.out.println("JSON Received: " + received);
 				
 				JSONObject json = (JSONObject) JSONValue.parse(received);
+				int requestId = Integer.valueOf(json.get("REQUESTID") + "");
 				
 				for (Object key : json.keySet()) {
 					if(key.equals(Key.REQUEST_LOGIN)) {
-						handleLoginRequest(json.get(key).toString(), hostIp);
+						handleLoginRequest(json.get(key).toString(), hostIp, requestId);
 					}
 				}
 
@@ -58,9 +59,10 @@ public class Receiver extends Thread {
 		}
 	}
 	
-	public void handleLoginRequest(String value, String hostIp){
+	public void handleLoginRequest(String value, String hostIp, int requestId){
 		BasicDBObject user = mongo.getUserByPasscode(value);
 		JSONObject response = new JSONObject();
+		response.put("REQUESTID", requestId);
 		if (user != null) {
 			response.put("ACTION", Key.SERVER_LOGIN_APPROVE);
 			response.put("SESSIONID", UUID.randomUUID().toString());
